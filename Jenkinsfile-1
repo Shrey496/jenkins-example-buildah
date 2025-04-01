@@ -1,7 +1,8 @@
 pipeline {
-  agent {
-    kubernetes {
-      yaml '''
+    agent {
+        kubernetes {
+            label 'buildah'
+            yaml """
 apiVersion: v1
 kind: Pod
 metadata:
@@ -14,27 +15,29 @@ spec:
     - cat
     tty: true
     securityContext:
-      privileged: true
+      runAsUser: 1000  # Use a non-root user that OpenShift allows.
+      allowPrivilegeEscalation: false
     volumeMounts:
       - name: varlibcontainers
         mountPath: /var/lib/containers
   volumes:
     - name: varlibcontainers
-'''   
-    }
-  }
-  options {
-    buildDiscarder(logRotator(numToKeepStr: '3'))
-    durabilityHint('PERFORMANCE_OPTIMIZED')
-    disableConcurrentBuilds()
-  }
-  stages {
-    stage('Build with Buildah') {
-      steps {
-        container('buildah') {
-          sh 'buildah build -t darinpope/jenkins-example-buildah:8.5-230 .'
+      emptyDir: {}
+"""
         }
-      }
     }
-  }
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '3'))
+        durabilityHint('PERFORMANCE_OPTIMIZED')
+        disableConcurrentBuilds()
+    }
+    stages {
+        stage('Build with Buildah') {
+            steps {
+                container('buildah') {
+                    sh 'buildah build -t darinpope/jenkins-example-buildah:8.5-230 .'
+                }
+            }
+        }
+    }
 }
