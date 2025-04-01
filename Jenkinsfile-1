@@ -14,12 +14,18 @@ spec:
     - cat
     tty: true
     securityContext:
-      privileged: true
+      # OpenShift does not allow privileged containers by default.
+      # Avoid privileged mode if possible or use a different SCC.
+      runAsUser: 1000  # Use a non-root user that OpenShift allows.
+      allowPrivilegeEscalation: false  # Ensure no privilege escalation is allowed.
     volumeMounts:
       - name: varlibcontainers
         mountPath: /var/lib/containers
   volumes:
     - name: varlibcontainers
+      # You might need to adjust this to OpenShift's persistent volume or use emptyDir.
+      emptyDir: {}
+  serviceAccountName: jenkins  # Ensure your Jenkins service account has appropriate privileges.
 '''   
     }
   }
